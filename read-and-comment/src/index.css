@@ -1,4 +1,5 @@
 :root {
+  
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
@@ -12,6 +13,10 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+#root {
+  min-height: 100vh;
+  min-width: 100vw;
+}
 
 a {
   font-weight: 500;
@@ -24,6 +29,7 @@ a:hover {
 
 body {
   margin: 0;
+  padding: 0;
   display: flex;
   place-items: center;
   min-width: 320px;
@@ -70,8 +76,54 @@ button:focus-visible {
 #signupform {
   display: flex;
   flex-direction: column;
+  width: 20%
 }
 #loginform {
   display: flex;
   flex-direction: column;
+  width: 20%;
+}
+#logincontainer, #signupcontainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+#posts {
+  display: flex;
+  flex-direction: column;
+  height: 80%;
+}
+#posts > li {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+}
+#posts > li > div {
+  margin-left: 60%;
+  display: flex;
+}
+#posts > li > div > a {
+  margin-left: 20px;
+}
+#comments {
+  display: flex;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+
+.commentcontainer {
+  display: flex;
+  flex-direction: column;
+}
+
+.comment {
+  display: flex;
+  justify-content: start;
+}
+.user {
+  margin-left: 30%;
 }

@@ -8,12 +8,12 @@ const cookieparser = require("cookie-parser");
 const cors = require("cors");
 const asyncHandler = require("express-async-handler");
 const User = require("../blog-api-backend/databasemodules/users");
-const Posts = require("../blog-api-backend/databasemodules/posts");
+const Post = require("../blog-api-backend/databasemodules/posts");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 const authorizeuser = require("../blog-api-backend/authorizeuser");
 
-app.use(cors());
+app.use(cors({credentials: true, origin: 'http://localhost:5173'}));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(cookieParser());
@@ -22,9 +22,34 @@ mongoose.connect(
   "mongodb+srv://testuser:5gftthXvh5Wetv2z@cluster0.ncnydoa.mongodb.net/blog-api?retryWrites=true&w=majority"
 );
 
-app.get("/posts", authorizeuser, (req, res) => {
-  res.json("it worked");
-});
+app.get("/posts", authorizeuser,asyncHandler(async (req, res) => {
+  const posts = await Post.find()
+  res.json(posts);
+}) );
+
+app.get('/comments/:id', authorizeuser, asyncHandler(async (req, res) => {
+  const post = await Post.findOne({_id: req.params.id})
+  const comments = await post.comments
+  if (comments) {
+    res.json(comments)
+  }
+}))
+
+app.post('/comments/:id', authorizeuser, asyncHandler(async (req, res) => {
+const commentobject = {
+  comment: req.user.username,
+  user: req.user.username
+}
+
+console.log(commentobject)
+  await Post.findByIdAndUpdate(req.params.id, {$push: {comments: {comment: req.body.comment, user: req.user.username}}} ,)
+
+
+  
+  res.json(200)
+}))
+
+
 
 app.post(
   "/signup",
@@ -59,6 +84,7 @@ app.post(
     });
     console.log(user);
     if (user != null) {
+      console.log('GIVE TOKE')
       const token = jwt.sign(user.toObject(), secret, { expiresIn: "1h" });
       res.cookie("token", token, {
         httpOnly: true,

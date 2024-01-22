@@ -17,7 +17,9 @@ function App() {
         <Route path="/login" element={<Login />}></Route>
         <Route path="/signup" element={<Signup />}></Route>
         <Route path="/posts" element={<Posts />}></Route>
-        <Route path="/comments" element={<Comments />}></Route>
+        <Route path="/comments" element={<Comments />}>
+          <Route path=":id" element={<Comments />}></Route>
+        </Route>
       </Routes>
     </>
   );
