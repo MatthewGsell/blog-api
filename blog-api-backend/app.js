@@ -12,8 +12,15 @@ const Post = require("../blog-api-backend/databasemodules/posts");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 const authorizeuser = require("../blog-api-backend/authorizeuser");
+const authorizeauthor = require("../blog-api-backend/authorizeauthor");
+const Crypto = require("crypto");
 
-app.use(cors({credentials: true, origin: 'http://localhost:5173'}));
+app.use(
+  cors({
+    credentials: true,
+    origin: ["http://localhost:5173", "http://localhost:4000"],
+  })
+);
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(cookieParser());
@@ -22,34 +29,59 @@ mongoose.connect(
   "mongodb+srv://testuser:5gftthXvh5Wetv2z@cluster0.ncnydoa.mongodb.net/blog-api?retryWrites=true&w=majority"
 );
 
-app.get("/posts", authorizeuser,asyncHandler(async (req, res) => {
-  const posts = await Post.find()
-  res.json(posts);
-}) );
+app.get(
+  "/posts",
+  authorizeuser,
+  asyncHandler(async (req, res) => {
+    const posts = await Post.find();
+    res.json(posts);
+  })
+);
 
-app.get('/comments/:id', authorizeuser, asyncHandler(async (req, res) => {
-  const post = await Post.findOne({_id: req.params.id})
-  const comments = await post.comments
-  if (comments) {
-    res.json(comments)
-  }
-}))
+app.get(
+  "/comments/:id",
+  authorizeuser,
+  asyncHandler(async (req, res) => {
+    const post = await Post.findOne({ _id: req.params.id });
+    const comments = await post.comments;
+    if (comments) {
+      res.json({ comments: comments, user: req.user.username });
+    }
+  })
+);
 
-app.post('/comments/:id', authorizeuser, asyncHandler(async (req, res) => {
-const commentobject = {
-  comment: req.user.username,
-  user: req.user.username
-}
+app.post(
+  "/comments/:id",
+  authorizeuser,
+  asyncHandler(async (req, res) => {
+    await Post.findByIdAndUpdate(req.params.id, {
+      $push: {
+        comments: {
+          id: Crypto.randomUUID(),
+          comment: req.body.comment,
+          user: req.user.username,
+        },
+      },
+    });
 
-console.log(commentobject)
-  await Post.findByIdAndUpdate(req.params.id, {$push: {comments: {comment: req.body.comment, user: req.user.username}}} ,)
+    res.json(200);
+  })
+);
 
-
-  
-  res.json(200)
-}))
-
-
+app.delete(
+  "/comments/:id",
+  authorizeuser,
+  asyncHandler(async (req, res) => {
+    await Post.findByIdAndUpdate(req.params.id, {
+      $pull: {
+        comments: {
+          id: req.body.item,
+        },
+      },
+    });
+    res.json(200);
+  })
+);
 
 app.post(
   "/signup",
@@ -61,11 +93,25 @@ app.post(
         password: req.body.password,
       });
       await user.save();
-      if (req.body.author == null) {
-        res.redirect("http://localhost:5173/login");
-      }
-    } else {
-      res.json(500);
+
+      res.redirect("http://localhost:3000/login");
+    }
+  })
+);
+
+app.post(
+  "/signupauthor",
+  asyncHandler(async (req, res) => {
+    const isduplicate = await User.findOne({ username: req.body.username });
+    if (isduplicate == null) {
+      const user = new User({
+        username: req.body.username,
+        password: req.body.password,
+        author: true,
+      });
+      await user.save();
+
+      res.redirect("http://localhost:4000/login");
     }
   })
 );
@@ -84,7 +130,7 @@ app.post(
     });
     console.log(user);
     if (user != null) {
-      console.log('GIVE TOKE')
+      console.log("GIVE TOKE");
       const token = jwt.sign(user.toObject(), secret, { expiresIn: "1h" });
       res.cookie("token", token, {
         httpOnly: true,
@@ -93,6 +139,37 @@ app.post(
     } else {
       res.json("user or pass incorrect");
     }
+  })
+);
+
+app.post(
+  "/loginauthor",
+  asyncHandler(async (req, res) => {
+    let secret = "notauthor";
+    if (req.body.author) {
+      secret = "author";
+    }
+    const user = await User.findOne({
+      username: req.body.username,
+      password: req.body.password,
+      author: true,
+    });
+    if (user != null) {
+      const token = jwt.sign(user.toObject(), secret, { expiresIn: "1h" });
+      res.cookie("token", token, {
+        httpOnly: true,
+      });
+      res.redirect("http://localhost:4000/createpost");
+    } else {
+      res.json("user or pass incorrect");
+    }
+  })
+);
+
+app.post(
+  "/createpost",
+  asyncHandler(async () => {
+    console.log("authorrrr");
   })
 );
 

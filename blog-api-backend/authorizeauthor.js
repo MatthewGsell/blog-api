@@ -1,10 +1,10 @@
 const jwt = require("jsonwebtoken");
 const { model } = require("mongoose");
 
-function authorizeuser(req, res, next) {
+function authorizeauthor(req, res, next) {
   const token = req.cookies.token;
   try {
-    const user = jwt.verify(token, "notauthor");
+    const user = jwt.verify(token, "author");
     req.user = user;
     next();
   } catch (err) {
@@ -13,4 +13,4 @@ function authorizeuser(req, res, next) {
   }
 }
 
-module.exports = authorizeuser;
+module.exports = authorizeauthor;
