@@ -9,6 +9,7 @@ const cors = require("cors");
 const asyncHandler = require("express-async-handler");
 const User = require("../blog-api-backend/databasemodules/users");
 const Post = require("../blog-api-backend/databasemodules/posts");
+const Draft = require("../blog-api-backend/databasemodules/drafts");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 const authorizeuser = require("../blog-api-backend/authorizeuser");
@@ -121,9 +122,6 @@ app.post(
   asyncHandler(async (req, res) => {
     console.log("ncjkldnwcjfd");
     let secret = "notauthor";
-    if (req.body.author) {
-      secret = "author";
-    }
     const user = await User.findOne({
       username: req.body.username,
       password: req.body.password,
@@ -145,10 +143,8 @@ app.post(
 app.post(
   "/loginauthor",
   asyncHandler(async (req, res) => {
-    let secret = "notauthor";
-    if (req.body.author) {
-      secret = "author";
-    }
+    let secret = "author";
+
     const user = await User.findOne({
       username: req.body.username,
       password: req.body.password,
@@ -168,8 +164,82 @@ app.post(
 
 app.post(
   "/createpost",
-  asyncHandler(async () => {
-    console.log("authorrrr");
+  authorizeauthor,
+  asyncHandler(async (req, res) => {
+    const post = new Post({
+      message: req.body.post,
+      author: req.user.username,
+      comments: [],
+    });
+    await post.save();
+    res.json(200);
+  })
+);
+
+app.post(
+  "/createdraft",
+  authorizeauthor,
+  asyncHandler(async (req, res) => {
+    const draft = new Draft({
+      message: req.body.post,
+      author: req.user.username,
+      comments: [],
+    });
+    await draft.save();
+    res.json(200);
+  })
+);
+
+app.get(
+  "/authorsposts",
+  authorizeauthor,
+  asyncHandler(async (req, res) => {
+    const posts = await Post.find({ author: req.user.username });
+    res.json(posts);
+  })
+);
+
+app.delete(
+  "/authorsposts",
+  authorizeauthor,
+  asyncHandler(async (req, res) => {
+    await Post.findOneAndDelete({ _id: req.body.id });
+    res.json(200);
+  })
+);
+
+app.get(
+  "/authorsdrafts",
+  authorizeauthor,
+  asyncHandler(async (req, res) => {
+    const posts = await Draft.find({ author: req.user.username });
+    res.json(posts);
+  })
+);
+
+app.delete(
+  "/authorsdrafts",
+  authorizeauthor,
+  asyncHandler(async (req, res) => {
+    await Draft.findOneAndDelete({ _id: req.body.id });
+    res.json(200);
+  })
+);
+
+app.post(
+  "/publishdraft",
+  authorizeauthor,
+  asyncHandler(async (req, res) => {
+    const draft = await Draft.findOne({ _id: req.body.id });
+    const post = new Post({
+      message: draft.message,
+      author: draft.author,
+      comments: [],
+    });
+    await post.save();
+    await Draft.findOneAndDelete({ _id: req.body.id });
+
+    res.json(200);
   })
 );
 

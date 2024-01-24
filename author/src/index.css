@@ -100,3 +100,8 @@ button:focus-visible {
 #createpostcontainer > textarea {
   height: 200px;
 }
+
+#mypostscontainer {
+  display: flex;
+  flex-direction: column;
+}
